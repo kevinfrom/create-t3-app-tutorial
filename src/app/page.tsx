@@ -1,7 +1,11 @@
 import {api} from '~/trpc/server'
 
-import {currentUser, SignInButton, SignOutButton} from '@clerk/nextjs'
+import {currentUser} from '@clerk/nextjs'
 import Image from "next/image";
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime'
+
+dayjs.extend(relativeTime)
 
 export async function CreatePostWizard() {
 	const user = await currentUser();
@@ -35,7 +39,7 @@ export default async function Home() {
 								<p className="text-slate-400 flex space-x-1">
 									<span>{`@${author.username}`}</span>
 									<span>·</span>
-									<span>1 hour ago</span>
+									<span>{dayjs(post.createdAt).fromNow()}</span>
 								</p>
 
 								<p>{post.content}</p>
