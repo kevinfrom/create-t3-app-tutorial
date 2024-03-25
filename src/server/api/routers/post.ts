@@ -1,31 +1,26 @@
-import { z } from "zod";
+import {z} from "zod";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { posts } from "~/server/db/schema";
+import {createTRPCRouter, publicProcedure} from "~/server/api/trpc";
+import {clerkClient} from "@clerk/nextjs";
+import {TRPCError} from "@trpc/server";
 
 export const postRouter = createTRPCRouter({
-  hello: publicProcedure
-    .input(z.object({ text: z.string() }))
-    .query(({ input }) => {
-      return {
-        greeting: `Hello ${input.text}`,
-      };
-    }),
+	getAll: publicProcedure.query(async ({ctx}) => {
+		const posts = await ctx.db.query.posts.findMany({
+			limit: 100
+		});
 
-  create: publicProcedure
-    .input(z.object({ name: z.string().min(1) }))
-    .mutation(async ({ ctx, input }) => {
-      // simulate a slow db call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+		const users = await clerkClient.users.getUserList({
+			userId: posts.map(post => post.userId),
+			limit: 100,
+		});
 
-      await ctx.db.insert(posts).values({
-        name: input.name,
-      });
-    }),
+		return posts.map(post => {
+			const author = users.find(user => user.id === post.userId);
 
-  getLatest: publicProcedure.query(({ ctx }) => {
-    return ctx.db.query.posts.findFirst({
-      orderBy: (posts, { desc }) => [desc(posts.createdAt)],
-    });
-  }),
+			if (!author) throw new TRPCError({message: 'Author for post not found', code: "INTERNAL_SERVER_ERROR"})
+
+			return {post, author}
+		});
+	}),
 });

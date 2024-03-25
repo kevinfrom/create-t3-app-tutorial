@@ -16,15 +16,15 @@ export const posts = createTable(
 	"post",
 	{
 		id: int('id', {mode: 'number'}).primaryKey({autoIncrement: true}),
-		userId: text('user_id', {length: 256}),
-		name: text('name', {length: 256}),
+		userId: text('user_id', {length: 256}).notNull(),
+		content: text('content', {length: 256}),
 		createdAt: int('created_at', {mode: 'timestamp'})
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),
 		updatedAt: int('updated_at', {mode: 'timestamp'}),
 	},
 	(example) => ({
-		nameIndex: index("name_idx").on(example.name),
+		contentIndex: index("content_idx").on(example.content),
 		userIdIndex: index("user_id_idx").on(example.userId),
 	})
 );

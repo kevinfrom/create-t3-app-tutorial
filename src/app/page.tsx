@@ -1,18 +1,49 @@
-import {api} from "~/trpc/server";
+import {api} from '~/trpc/server'
 
-import {currentUser, SignInButton, UserButton} from "@clerk/nextjs";
+import {currentUser, SignInButton, SignOutButton} from '@clerk/nextjs'
+import Image from "next/image";
 
-export default async function Home() {
-	const hello = await api.post.hello({text: "from tRPC"});
-
+export async function CreatePostWizard() {
 	const user = await currentUser();
 
-	return (
-		<main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-			<p className="mb-4">{hello.greeting}</p>
+	if (!user) return null;
 
-			{!user && <SignInButton mode={"modal"}/>}
-			{user && <UserButton/>}
+	return (
+		<div className="flex space-x-3">
+			<Image src={user.imageUrl} alt="Profile image" className="h-14 w-14 rounded-full" width={56} height={56}/>
+			<input placeholder="Type some emojis!" className="bg-transparent w-full outline-none"/>
+		</div>
+	);
+}
+
+export default async function Home() {
+	const posts = await api.post.getAll();
+
+	return (
+		<main className="flex justify-center h-screen">
+			<div className="w-full border-x border-slate-200 md:max-w-2xl">
+				<div className="flex border-b border-slate-400 p-4">
+					<CreatePostWizard/>
+				</div>
+
+				<div className="flex flex-col">
+					{posts.map(({post, author}) => (
+						<div key={post.id} className="flex p-4 items-center space-x-3 border-b border-slate-400">
+							<Image src={author.imageUrl} alt="Profile image" className="h-14 w-14 rounded-full" width={56} height={56}/>
+
+							<div>
+								<p className="text-slate-400 flex space-x-1">
+									<span>{`@${author.username}`}</span>
+									<span>·</span>
+									<span>1 hour ago</span>
+								</p>
+
+								<p>{post.content}</p>
+							</div>
+						</div>
+					))}
+				</div>
+			</div>
 		</main>
 	);
 }
